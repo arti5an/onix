@@ -21,6 +21,9 @@
   networking.hostName = "nixos"; # Define your hostname.
   # networking.wireless.enable = true;  # Enables wireless support via wpa_supplicant.
 
+  # Attempting to decrypt automatically on boot
+  boot.initrd.systemd.enable = true;
+
   # Configure network proxy if necessary
   # networking.proxy.default = "http://user:password@proxy:port/";
   # networking.proxy.noProxy = "127.0.0.1,localhost,internal.domain";
@@ -50,8 +53,8 @@
   services.xserver.enable = true;
 
   # Enable the GNOME Desktop Environment.
-  services.xserver.displayManager.gdm.enable = true;
-  services.xserver.desktopManager.gnome.enable = true;
+  services.displayManager.gdm.enable = true;
+  services.desktopManager.gnome.enable = true;
 
   # Configure keymap in X11
   services.xserver.xkb = {
@@ -105,6 +108,9 @@
   environment.systemPackages = with pkgs; [
   #  vim # Do not forget to add an editor to edit configuration.nix! The Nano editor is also installed by default.
   #  wget
+    git
+    neovim
+    tpm2-tss
   ];
 
   # Some programs need SUID wrappers, can be configured further or are
@@ -119,6 +125,10 @@
 
   # Enable the OpenSSH daemon.
   # services.openssh.enable = true;
+
+  # Nix convenience settings
+  nix.settings.experimental-features = [ "nix-command" "flakes" ];
+  nix.settings.trusted-users = [ "root" "richard" ];
 
   # Open ports in the firewall.
   # networking.firewall.allowedTCPPorts = [ ... ];
