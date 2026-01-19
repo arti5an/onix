@@ -1,117 +1,188 @@
 # Edit this configuration file to define what should be installed on
 # your system. Help is available in the configuration.nix(5) man page, on
 # https://search.nixos.org/options and in the NixOS manual (`nixos-help`).
-
-{ config, inputs, ouputs, lib, pkgs, ... }:
-
 {
-  imports =
-    [ # Include the results of the hardware scan.
-      ./hardware-configuration.nix
-      inputs.home-manager.nixosModules.home-manager
-    ];
+  config,
+  lib,
+  pkgs,
+  ...
+}: {
+  imports = [
+    # Include the results of the hardware scan.
+    ./hardware-configuration.nix
+  ];
 
-  # Bootloader.
+  # Use the systemd-boot EFI boot loader.
   boot.loader.systemd-boot.enable = true;
   boot.loader.efi.canTouchEfiVariables = true;
 
-  # Use latest kernel
+  # Use latest kernel.
   boot.kernelPackages = pkgs.linuxPackages_latest;
 
-  boot.initrd.luks.devices."luks-766b52d1-3750-4071-bc80-12062fad8cce".device = "/dev/disk/by-uuid/766b52d1-3750-4071-bc80-12062fad8cce";
   networking.hostName = "rogue"; # Define your hostname.
-  # networking.wireless.enable = true;  # Enables wireless support via wpa_supplicant.
 
-  # Use systemd during init to enable drive description via tpm2.
-  boot.initrd.systemd.enable = true;
-
-  # Configure network proxy if necessary
-  # networking.proxy.default = "http://user:password@proxy:port/";
-  # networking.proxy.noProxy = "127.0.0.1,localhost,internal.domain";
-
-  # Enable networking
+  # Configure network connections interactively with nmcli or nmtui.
   networking.networkmanager.enable = true;
 
   # Set your time zone.
   time.timeZone = "Europe/London";
 
+  # Configure network proxy if necessary
+  # networking.proxy.default = "http://user:password@proxy:port/";
+  # networking.proxy.noProxy = "127.0.0.1,localhost,internal.domain";
+
   # Select internationalisation properties.
   i18n.defaultLocale = "en_GB.UTF-8";
-
-  i18n.extraLocaleSettings = {
-    LC_ADDRESS = "en_GB.UTF-8";
-    LC_IDENTIFICATION = "en_GB.UTF-8";
-    LC_MEASUREMENT = "en_GB.UTF-8";
-    LC_MONETARY = "en_GB.UTF-8";
-    LC_NAME = "en_GB.UTF-8";
-    LC_NUMERIC = "en_GB.UTF-8";
-    LC_PAPER = "en_GB.UTF-8";
-    LC_TELEPHONE = "en_GB.UTF-8";
-    LC_TIME = "en_GB.UTF-8";
+  console = {
+    font = "Lat2-Terminus16";
+    keyMap = "uk";
+    #   useXkbConfig = true; # use xkb.options in tty.
   };
 
   # Enable the X11 windowing system.
-  services.xserver.enable = true;
+  # services.xserver.enable = true;
 
-  # Enable the GNOME Desktop Environment.
-  services.displayManager.gdm.enable = true;
-  services.desktopManager.gnome.enable = true;
+  # Cosmic greeter and desktop
+  # services.displayManager.cosmic-greeter.enable = true;
+  # services.desktopManager.cosmic.enable = true;
+  # services.system76-scheduler.enable = true;
 
   # Configure keymap in X11
-  services.xserver.xkb = {
-    layout = "gb";
-    variant = "";
-    options = "caps:escape";
-  };
+  # services.xserver.xkb.layout = "us";
+  # services.xserver.xkb.options = "eurosign:e,caps:escape";
 
-  # Configure console keymap
-  console.keyMap = "uk";
+  nix.settings = {
+    experimental-features = ["nix-command" "flakes"];
+    trusted-users = ["root" "richard"];
+  };
 
   # Enable CUPS to print documents.
   services.printing.enable = true;
 
-  # Enable sound with pipewire.
-  services.pulseaudio.enable = false;
-  security.rtkit.enable = true;
+  # Enable sound.
+  # services.pulseaudio.enable = true;
+  # OR
   services.pipewire = {
     enable = true;
-    alsa.enable = true;
-    alsa.support32Bit = true;
     pulse.enable = true;
-    # If you want to use JACK applications, uncomment this
-    #jack.enable = true;
-
-    # use the example session manager (no others are packaged yet so this is enabled by default,
-    # no need to redefine it in your config for now)
-    #media-session.enable = true;
+    jack.enable = true;
   };
 
   # Enable touchpad support (enabled default in most desktopManager).
   # services.libinput.enable = true;
 
   # Define a user account. Don't forget to set a password with ‘passwd’.
-  users.users.richard = {
-    isNormalUser = true;
-    description = "Richard";
-    extraGroups = [ "networkmanager" "wheel" ];
-    packages = [ inputs.home-manager.packages.${pkgs.stdenv.hostPlatform.system}.default ];
+  users.users = {
+    richard = {
+      uid = 1000;
+      isNormalUser = true;
+      description = "Richard";
+      initialHashedPassword = "$6$YSQKtWp3CE9PMoSN$xjCl/cHEtGz0FGQ8br1LqvRxNe6hr7UoNZUnatCJGKO2UcBIvktuxc5XHVMnx29jc/EZ8I3V.uqfjAO8WPKZA0";
+      extraGroups = ["networkmanager" "video" "wheel"];
+    };
+    artisan = {
+      uid = 1024;
+      isNormalUser = true;
+      description = "αяτιsαη";
+      extraGroups = ["networkmanager" "video" "wheel"];
+      initialHashedPassword = "$6$rrPjp8wKKcN6ETsi$c6u//AGn4VujYvgeC0F9gsnJcieuOAKN/usI2qTL6qyVeZ5bBEJHPUJYjf.ZWFL56ncVoM8TGGrpNHAk8Wwm.0";
+    };
   };
 
-  # Install firefox.
-  programs.firefox.enable = true;
-
-  # Allow unfree packages
-  nixpkgs.config.allowUnfree = true;
+  programs.firefox = {
+    enable = true;
+    preferences = {
+      "browser.startup.homepage" = "https://start.duckduckgo.com/";
+      "browser.tabs.closeWindowWithLastTab" = false;
+      "dom.security.https_only_mode" = true;
+      "network.trr.mode" = 3;
+      "network.trr.uri" = "https://security.cloudflare-dns.com/dns-query"; # Block malware
+      "sidebar.position_start" = false;
+      "sidebar.revamp" = true;
+      "sidebar.verticalTabs" = true;
+      "widget.gtk.libadwaita-colors.enabled" = false;
+    };
+  };
 
   # List packages installed in system profile.
   # You can use https://search.nixos.org/ to find more packages (and options).
   environment.systemPackages = with pkgs; [
-  #  vim # Do not forget to add an editor to edit configuration.nix! The Nano editor is also installed by default.
-  #  wget
+    chafa
+    feh
+    foot
     git
+    imv
+    mount-zip
+    mpv
     neovim
-    tpm2-tss
+    qutebrowser
+    unzip
+    vifm
+    vim
+    wget
+    yt-dlp
+    zip
+
+    # sway-related
+    bluetui
+    grim
+    mako
+    slurp
+    wiremix
+    wl-clipboard
+
+    # fscrypt-related
+    fscrypt-experimental
+    fscryptctl
   ];
+
+  services.gnome.gnome-keyring.enable = true;
+  services.greetd = {
+    enable = true;
+    settings.default_session = {
+      command = "${pkgs.tuigreet}/bin/tuigreet --cmd sway --issue --time --remember --asterisks";
+    };
+    useTextGreeter = true;
+  };
+  programs = {
+    light.enable = true;
+    sway = {
+      enable = true;
+      wrapperFeatures.gtk = true;
+    };
+  };
+  fonts = {
+    packages = with pkgs; [
+      noto-fonts
+      noto-fonts-cjk-sans
+      noto-fonts-cjk-serif
+      noto-fonts-color-emoji
+      font-awesome
+      source-han-sans
+      source-han-serif
+    ];
+    fontconfig.defaultFonts = {
+      serif = ["Noto Serif" "Source Han Serif"];
+      sansSerif = ["Noto Sans" "Source Han Sans"];
+    };
+  };
+  systemd.user.services.kanshi = {
+    description = "kanshi daemon";
+    serviceConfig = {
+      Type = "simple";
+      ExecStart = ''${pkgs.kanshi}/bin/kanshi -c kanshi_config_file'';
+    };
+  };
+  security.pam.loginLimits = [
+    {
+      domain = "@users";
+      item = "rtprio";
+      type = "-";
+      value = 1;
+    }
+  ];
+
+  security.pam.enableFscrypt = true;
 
   # Some programs need SUID wrappers, can be configured further or are
   # started in user sessions.
@@ -120,8 +191,19 @@
   #   enable = true;
   #   enableSSHSupport = true;
   # };
+  programs.tmux.enable = true;
+
+  programs.river-classic.enable = true;
 
   # List services that you want to enable:
+
+  hardware.bluetooth = {
+    enable = true;
+    settings.General = {
+      Experimental = true;
+      FastConnectable = true;
+    };
+  };
 
   # Enable the OpenSSH daemon.
   # services.openssh.enable = true;
@@ -155,5 +237,4 @@
   #
   # For more information, see `man configuration.nix` or https://nixos.org/manual/nixos/stable/options#opt-system.stateVersion .
   system.stateVersion = "25.11"; # Did you read the comment?
-
 }
